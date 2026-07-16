@@ -1,0 +1,10 @@
+# .NET build output (CI projects under ci~/)
+[Bb]in/
+[Oo]bj/
+
+# Rider / VS
+.idea/
+.vs/
+
+# OS
+.DS_Store

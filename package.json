@@ -1,0 +1,23 @@
+{
+  "name": "com.skysepehru.property-registry",
+  "version": "0.1.0",
+  "displayName": "Property Registry",
+  "description": "Reactive, dependency-graph-driven property/stat system for Unity. Define base and derived properties with calculators; changes propagate through a dirty dependency graph and surface as R3 reactive properties.\n\nRequires R3 (com.cysharp.r3) to be installed in the consuming project.",
+  "unity": "2022.3",
+  "keywords": [
+    "stats",
+    "properties",
+    "reactive",
+    "gameplay",
+    "dependency-graph"
+  ],
+  "author": {
+    "name": "skysepehru",
+    "url": "https://github.com/skysepehru"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/skysepehru/property-registry.git"
+  }
+}
