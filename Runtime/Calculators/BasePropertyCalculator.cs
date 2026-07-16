@@ -1,8 +1,10 @@
-using System;
-using System.Collections.Generic;
-
 namespace skysepehru.Core.PropertyRegistry
 {
+    /// <summary>
+    /// The calculator attached to a base property's node: it has no inputs and never computes a value
+    /// (base values are written directly via <see cref="PropertySystem{TEntity,TProperty}.SetBasePropertyValue"/>).
+    /// It exists so every node has a calculator and so a node can be recognised as base.
+    /// </summary>
     internal class BasePropertyCalculator : IPropertyCalculator
     {
         public readonly PropertyFilter _baseProperty;
@@ -12,11 +14,12 @@ namespace skysepehru.Core.PropertyRegistry
             _baseProperty = baseFilter;
         }
 
-        public int GetInputProperties(Span<PropertyFilter> buffer) => 0;
+        public void Declare(CalculatorBuilder builder)
+        {
+            builder.SetOutput(_baseProperty);
+        }
 
-        public PropertyFilter GetOutputProperty() => _baseProperty;
-
-        public void Calculate(IReadOnlyList<IReadOnlyList<IReadOnlyProperty>> inputProperties, List<Property> outputProperties)
+        public void Calculate(in CalculationContext context)
         {
         }
     }

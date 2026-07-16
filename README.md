@@ -82,54 +82,49 @@ public sealed class CharacterStats : PropertySystem<Entity, Stat>
 
 ### 3. Write a calculator
 
-A calculator declares its **inputs**, its **output**, and how to compute the output.
-It implements `IPropertyCalculator`:
+A calculator declares its **inputs** and **output** once, then computes the output on
+each tick. It implements `IPropertyCalculator`:
 
 ```csharp
-using System;
-using System.Collections.Generic;
 using skysepehru.Core.PropertyRegistry;
 
 // AttackPower[c] = Strength[c] * GlobalDamageMultiplier
 public sealed class AttackPowerCalculator : IPropertyCalculator
 {
-    // Declare inputs by writing filters into the buffer, in order.
-    // Return how many you wrote.
-    public int GetInputProperties(Span<PropertyFilter> buffer)
+    // Handles returned by AddInput; store them and read inputs through them in Calculate.
+    private InputHandle _strength;
+    private InputHandle _multiplier;
+
+    // Runs once, at registration. Name the inputs and output; keep the returned handles.
+    public void Declare(CalculatorBuilder builder)
     {
-        buffer[0] = PropertyFilter.New(Stat.Strength, Entity.Character);              // input 0
-        buffer[1] = PropertyFilter.New(Stat.GlobalDamageMultiplier, Entity.Global);   // input 1
-        return 2;
+        _strength   = builder.AddInput(Stat.Strength, Entity.Character);
+        _multiplier = builder.AddInput(Stat.GlobalDamageMultiplier, Entity.Global);
+        builder.SetOutput(Stat.AttackPower, Entity.Character);
     }
 
-    public PropertyFilter GetOutputProperty()
-        => PropertyFilter.New(Stat.AttackPower, Entity.Character);
-
-    public void Calculate(IReadOnlyList<IReadOnlyList<IReadOnlyProperty>> inputs,
-                          List<Property> outputs)
+    // Runs every tick the calculator is dirty. Resolve inputs by handle, write via outputs.
+    public void Calculate(in CalculationContext context)
     {
-        // inputs[0] -> Strength    (per-instance: one entry per Character)
-        // inputs[1] -> multiplier  (global: a single entry at [0])
-        var strengths  = inputs[0];
-        var multiplier = inputs[1][0].ReadOnlyValueReactive.CurrentValue;
+        var strengths  = context.Inputs(_strength);    // per-instance: one entry per Character
+        var multiplier = context.Value(_multiplier);   // global: a single value
+        var outputs    = context.Outputs;
 
         for (int i = 0; i < outputs.Count; i++)
         {
-            if (!outputs[i].IsDirtied) continue; // skip instances that didn't change
-            outputs[i].ValueReactive.Value =
-                strengths[i].ReadOnlyValueReactive.CurrentValue * multiplier;
+            if (!outputs.IsDirty(i)) continue;         // skip instances that didn't change
+            outputs.Set(i, strengths[i] * multiplier);
         }
     }
 }
 ```
 
-> **The input/output API is positional — mind the indices.** There are no names in
-> `Calculate`. `inputs` arrives in the **exact order** you wrote filters in
-> `GetInputProperties` (`inputs[0]` is your first filter, `inputs[1]` the second, …),
-> and each entry is itself a list over that property's instances — a single element
-> `[0]` for global properties, one element per instance for per-instance properties.
-> `outputs` is the instance list for your output property. Keeping these indices in
-> sync is your responsibility; if you reorder the filters, update `Calculate` to match.
+> **Handles make input order irrelevant.** You read each input through the handle
+> `AddInput` gave you, not a positional index, so reordering the `AddInput` calls never
+> changes what `Calculate` sees. `Declare` runs exactly once, at registration, so it can
+> allocate freely; `Calculate` runs on the hot path and allocates nothing. Use
+> `context.Inputs(handle)` for per-instance inputs (indexed `[0..Count)`) and
+> `context.Value(handle)` for single-instance/global inputs.
 
 ### 4. Register everything and use it
 

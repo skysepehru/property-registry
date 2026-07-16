@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace skysepehru.Core.PropertyRegistry.Tests.Editor.PropertySystemTests
 {
     internal enum TestEntities
@@ -36,18 +33,16 @@ namespace skysepehru.Core.PropertyRegistry.Tests.Editor.PropertySystemTests
     }
 
     /// <summary>
-    /// Hand double for IPropertyCalculator (NSubstitute can't proxy its Span parameter). PropertySystem
+    /// Hand double for IPropertyCalculator (NSubstitute can't proxy its ref-struct context). PropertySystem
     /// only forwards calculators to the graph, so the fake needs no behaviour beyond a parameterless
-    /// constructor (for the generic RegisterCalculator&lt;T&gt; overload) and a fixed output filter.
+    /// constructor (for the generic RegisterCalculator&lt;T&gt; overload) and a fixed output.
     /// </summary>
     internal sealed class FakeCalculator : IPropertyCalculator
     {
-        public int GetInputProperties(Span<PropertyFilter> buffer) => 0;
+        public void Declare(CalculatorBuilder builder)
+            => builder.SetOutput(TestProperties.Derived, TestEntities.Primary);
 
-        public PropertyFilter GetOutputProperty()
-            => PropertyFilter.New(TestProperties.Derived, TestEntities.Primary);
-
-        public void Calculate(IReadOnlyList<IReadOnlyList<IReadOnlyProperty>> inputs, List<Property> outputs)
+        public void Calculate(in CalculationContext context)
         {
         }
     }

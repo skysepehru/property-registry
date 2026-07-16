@@ -152,6 +152,15 @@ namespace skysepehru.Core.PropertyRegistry.Tests.Editor.PropertyDependencyGraphT
         }
 
         [Test]
+        public void Connect_CalculatorWithoutOutput_Throws()
+        {
+            _graph.GetOrAddNode(Filter(Turret, BaseInput), isBaseProperty: true, out _);
+
+            // Declares an input but never calls SetOutput — must be rejected at registration.
+            Assert.Catch(() => _graph.Connect(new NoOutputCalculator(Filter(Turret, BaseInput))));
+        }
+
+        [Test]
         public void Connect_AcyclicDiamond_DoesNotThrow()
         {
             _graph.GetOrAddNode(Filter(Turret, BaseInput), isBaseProperty: true, out _);

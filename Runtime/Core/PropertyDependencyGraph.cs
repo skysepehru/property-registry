@@ -46,9 +46,11 @@ namespace skysepehru.Core.PropertyRegistry
         /// </summary>
         public PropertyGraphNode Connect(IPropertyCalculator calculator)
         {
-            Span<PropertyFilter> inputFilters = stackalloc PropertyFilter[32];
-            int inputFilterCount = calculator.GetInputProperties(inputFilters);
-            PropertyFilter outputFilter = calculator.GetOutputProperty();
+            var builder = new CalculatorBuilder();
+            calculator.Declare(builder);
+
+            PropertyFilter[] inputFilters = builder.BuildInputFilters();
+            PropertyFilter outputFilter = builder.OutputFilter;
 
             if (!_nodes.TryGetValue(outputFilter, out var node))
             {
@@ -60,7 +62,7 @@ namespace skysepehru.Core.PropertyRegistry
                 throw new Exception("A calculator is already registered for this property.");
             }
 
-            for (int i = 0; i < inputFilterCount; i++)
+            for (int i = 0; i < inputFilters.Length; i++)
             {
                 if (!_nodes.ContainsKey(inputFilters[i]))
                 {
@@ -68,14 +70,15 @@ namespace skysepehru.Core.PropertyRegistry
                 }
             }
 
-            if (WouldCreateCycle(node, inputFilters, inputFilterCount))
+            if (WouldCreateCycle(node, inputFilters))
             {
                 throw new Exception("Connecting this calculator would create a cyclic dependency.");
             }
 
             node.Calculator = calculator;
+            node.InputFilters = inputFilters;
 
-            for (int i = 0; i < inputFilterCount; i++)
+            for (int i = 0; i < inputFilters.Length; i++)
             {
                 var input = _nodes[inputFilters[i]];
                 (input.Outputs ??= new List<PropertyGraphNode>()).Add(node);
@@ -92,7 +95,7 @@ namespace skysepehru.Core.PropertyRegistry
         /// input→output would close the loop. A self-dependency (an input equal to the output) is the
         /// degenerate, zero-length case and is caught the same way.
         /// </summary>
-        private bool WouldCreateCycle(PropertyGraphNode output, ReadOnlySpan<PropertyFilter> inputFilters, int inputFilterCount)
+        private bool WouldCreateCycle(PropertyGraphNode output, PropertyFilter[] inputFilters)
         {
             _cycleQueueCache.Clear();
             _cycleVisitedCache.Clear();
@@ -106,7 +109,7 @@ namespace skysepehru.Core.PropertyRegistry
                     continue;
                 }
 
-                for (int i = 0; i < inputFilterCount; i++)
+                for (int i = 0; i < inputFilters.Length; i++)
                 {
                     if (node.PropertyFilter.Equals(inputFilters[i]))
                     {

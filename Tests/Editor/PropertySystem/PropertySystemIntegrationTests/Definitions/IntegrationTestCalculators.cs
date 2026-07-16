@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace skysepehru.Core.PropertyRegistry.Tests.Editor
 {
     // Calculators that model the property graph documented in IntegrationTestEnums:
@@ -21,29 +18,28 @@ namespace skysepehru.Core.PropertyRegistry.Tests.Editor
     internal sealed class LevelMultipliedByTwoCalculator : IPropertyCalculator
     {
         private readonly IntegrationTestEntities _entity;
+        private InputHandle _level;
 
         public LevelMultipliedByTwoCalculator(IntegrationTestEntities entity) => _entity = entity;
 
-        public int GetInputProperties(Span<PropertyFilter> buffer)
+        public void Declare(CalculatorBuilder builder)
         {
-            buffer[0] = PropertyFilter.New(IntegrationTestProperties.Level, _entity);
-            return 1;
+            _level = builder.AddInput(IntegrationTestProperties.Level, _entity);
+            builder.SetOutput(IntegrationTestProperties.LevelMultipliedByTwo, _entity);
         }
 
-        public PropertyFilter GetOutputProperty()
-            => PropertyFilter.New(IntegrationTestProperties.LevelMultipliedByTwo, _entity);
-
-        public void Calculate(IReadOnlyList<IReadOnlyList<IReadOnlyProperty>> inputs, List<Property> outputs)
+        public void Calculate(in CalculationContext context)
         {
-            var levels = inputs[0];
+            var levels = context.Inputs(_level);
+            var outputs = context.Outputs;
             for (int i = 0; i < outputs.Count; i++)
             {
-                if (!outputs[i].IsDirtied)
+                if (!outputs.IsDirty(i))
                 {
                     continue;
                 }
 
-                outputs[i].ValueReactive.Value = levels[i].ReadOnlyValueReactive.CurrentValue * 2;
+                outputs.Set(i, levels[i] * 2);
             }
         }
     }
@@ -55,31 +51,31 @@ namespace skysepehru.Core.PropertyRegistry.Tests.Editor
     internal sealed class LevelMultipliedByGlobalMultiplierCalculator : IPropertyCalculator
     {
         private readonly IntegrationTestEntities _entity;
+        private InputHandle _level;
+        private InputHandle _multiplier;
 
         public LevelMultipliedByGlobalMultiplierCalculator(IntegrationTestEntities entity) => _entity = entity;
 
-        public int GetInputProperties(Span<PropertyFilter> buffer)
+        public void Declare(CalculatorBuilder builder)
         {
-            buffer[0] = PropertyFilter.New(IntegrationTestProperties.Level, _entity);
-            buffer[1] = PropertyFilter.New(IntegrationTestProperties.GlobalMultiplier, IntegrationTestEntities.Global);
-            return 2;
+            _level = builder.AddInput(IntegrationTestProperties.Level, _entity);
+            _multiplier = builder.AddInput(IntegrationTestProperties.GlobalMultiplier, IntegrationTestEntities.Global);
+            builder.SetOutput(IntegrationTestProperties.LevelMultipliedByGlobalMultiplier, _entity);
         }
 
-        public PropertyFilter GetOutputProperty()
-            => PropertyFilter.New(IntegrationTestProperties.LevelMultipliedByGlobalMultiplier, _entity);
-
-        public void Calculate(IReadOnlyList<IReadOnlyList<IReadOnlyProperty>> inputs, List<Property> outputs)
+        public void Calculate(in CalculationContext context)
         {
-            var levels = inputs[0];
-            var multiplier = inputs[1][0].ReadOnlyValueReactive.CurrentValue;
+            var levels = context.Inputs(_level);
+            var multiplier = context.Value(_multiplier);
+            var outputs = context.Outputs;
             for (int i = 0; i < outputs.Count; i++)
             {
-                if (!outputs[i].IsDirtied)
+                if (!outputs.IsDirty(i))
                 {
                     continue;
                 }
 
-                outputs[i].ValueReactive.Value = levels[i].ReadOnlyValueReactive.CurrentValue * multiplier;
+                outputs.Set(i, levels[i] * multiplier);
             }
         }
     }
@@ -87,29 +83,29 @@ namespace skysepehru.Core.PropertyRegistry.Tests.Editor
     /// <summary>TurretDps@Turret[i] = TurretStartingDps@Turret[i] * LevelMultipliedByGlobalMultiplier@Turret[i].</summary>
     internal sealed class TurretDpsCalculator : IPropertyCalculator
     {
-        public int GetInputProperties(Span<PropertyFilter> buffer)
+        private InputHandle _startingDps;
+        private InputHandle _scaled;
+
+        public void Declare(CalculatorBuilder builder)
         {
-            buffer[0] = PropertyFilter.New(IntegrationTestProperties.TurretStartingDps, IntegrationTestEntities.Turret);
-            buffer[1] = PropertyFilter.New(IntegrationTestProperties.LevelMultipliedByGlobalMultiplier, IntegrationTestEntities.Turret);
-            return 2;
+            _startingDps = builder.AddInput(IntegrationTestProperties.TurretStartingDps, IntegrationTestEntities.Turret);
+            _scaled = builder.AddInput(IntegrationTestProperties.LevelMultipliedByGlobalMultiplier, IntegrationTestEntities.Turret);
+            builder.SetOutput(IntegrationTestProperties.TurretDps, IntegrationTestEntities.Turret);
         }
 
-        public PropertyFilter GetOutputProperty()
-            => PropertyFilter.New(IntegrationTestProperties.TurretDps, IntegrationTestEntities.Turret);
-
-        public void Calculate(IReadOnlyList<IReadOnlyList<IReadOnlyProperty>> inputs, List<Property> outputs)
+        public void Calculate(in CalculationContext context)
         {
-            var startingDps = inputs[0];
-            var scaled = inputs[1];
+            var startingDps = context.Inputs(_startingDps);
+            var scaled = context.Inputs(_scaled);
+            var outputs = context.Outputs;
             for (int i = 0; i < outputs.Count; i++)
             {
-                if (!outputs[i].IsDirtied)
+                if (!outputs.IsDirty(i))
                 {
                     continue;
                 }
 
-                outputs[i].ValueReactive.Value =
-                    startingDps[i].ReadOnlyValueReactive.CurrentValue * scaled[i].ReadOnlyValueReactive.CurrentValue;
+                outputs.Set(i, startingDps[i] * scaled[i]);
             }
         }
     }
@@ -120,30 +116,30 @@ namespace skysepehru.Core.PropertyRegistry.Tests.Editor
     /// </summary>
     internal sealed class TotalOutputDpsCalculator : IPropertyCalculator
     {
-        public int GetInputProperties(Span<PropertyFilter> buffer)
+        private InputHandle _turretDps;
+
+        public void Declare(CalculatorBuilder builder)
         {
-            buffer[0] = PropertyFilter.New(IntegrationTestProperties.TurretDps, IntegrationTestEntities.Turret);
-            return 1;
+            _turretDps = builder.AddInput(IntegrationTestProperties.TurretDps, IntegrationTestEntities.Turret);
+            builder.SetOutput(IntegrationTestProperties.TotalOutputDps, IntegrationTestEntities.Global);
         }
 
-        public PropertyFilter GetOutputProperty()
-            => PropertyFilter.New(IntegrationTestProperties.TotalOutputDps, IntegrationTestEntities.Global);
-
-        public void Calculate(IReadOnlyList<IReadOnlyList<IReadOnlyProperty>> inputs, List<Property> outputs)
+        public void Calculate(in CalculationContext context)
         {
-            if (!outputs[0].IsDirtied)
+            var outputs = context.Outputs;
+            if (!outputs.IsDirty(0))
             {
                 return;
             }
 
-            var turretDps = inputs[0];
+            var turretDps = context.Inputs(_turretDps);
             double sum = 0;
             for (int i = 0; i < turretDps.Count; i++)
             {
-                sum += turretDps[i].ReadOnlyValueReactive.CurrentValue;
+                sum += turretDps[i];
             }
 
-            outputs[0].ValueReactive.Value = sum;
+            outputs.Set(0, sum);
         }
     }
 
@@ -155,37 +151,36 @@ namespace skysepehru.Core.PropertyRegistry.Tests.Editor
     /// </summary>
     internal sealed class ContainerStorageCalculator : IPropertyCalculator
     {
-        public int GetInputProperties(Span<PropertyFilter> buffer)
+        private InputHandle _totalOutputDps;
+        private InputHandle _bufferSeconds;
+        private InputHandle _scaled;
+        private InputHandle _containerCount;
+
+        public void Declare(CalculatorBuilder builder)
         {
-            buffer[0] = PropertyFilter.New(IntegrationTestProperties.TotalOutputDps, IntegrationTestEntities.Global);
-            buffer[1] = PropertyFilter.New(IntegrationTestProperties.ContainerStartingBufferSeconds, IntegrationTestEntities.Container);
-            buffer[2] = PropertyFilter.New(IntegrationTestProperties.LevelMultipliedByGlobalMultiplier, IntegrationTestEntities.Container);
-            buffer[3] = PropertyFilter.New(IntegrationTestProperties.ContainerCount, IntegrationTestEntities.Global);
-            return 4;
+            _totalOutputDps = builder.AddInput(IntegrationTestProperties.TotalOutputDps, IntegrationTestEntities.Global);
+            _bufferSeconds = builder.AddInput(IntegrationTestProperties.ContainerStartingBufferSeconds, IntegrationTestEntities.Container);
+            _scaled = builder.AddInput(IntegrationTestProperties.LevelMultipliedByGlobalMultiplier, IntegrationTestEntities.Container);
+            _containerCount = builder.AddInput(IntegrationTestProperties.ContainerCount, IntegrationTestEntities.Global);
+            builder.SetOutput(IntegrationTestProperties.ContainerStorage, IntegrationTestEntities.Container);
         }
 
-        public PropertyFilter GetOutputProperty()
-            => PropertyFilter.New(IntegrationTestProperties.ContainerStorage, IntegrationTestEntities.Container);
-
-        public void Calculate(IReadOnlyList<IReadOnlyList<IReadOnlyProperty>> inputs, List<Property> outputs)
+        public void Calculate(in CalculationContext context)
         {
-            var totalOutputDps = inputs[0][0].ReadOnlyValueReactive.CurrentValue;
-            var bufferSeconds = inputs[1];
-            var scaled = inputs[2];
-            var containerCount = inputs[3][0].ReadOnlyValueReactive.CurrentValue;
+            var totalOutputDps = context.Value(_totalOutputDps);
+            var bufferSeconds = context.Inputs(_bufferSeconds);
+            var scaled = context.Inputs(_scaled);
+            var containerCount = context.Value(_containerCount);
+            var outputs = context.Outputs;
 
             for (int i = 0; i < outputs.Count; i++)
             {
-                if (!outputs[i].IsDirtied)
+                if (!outputs.IsDirty(i))
                 {
                     continue;
                 }
 
-                outputs[i].ValueReactive.Value =
-                    totalOutputDps
-                    * bufferSeconds[i].ReadOnlyValueReactive.CurrentValue
-                    * scaled[i].ReadOnlyValueReactive.CurrentValue
-                    / containerCount;
+                outputs.Set(i, totalOutputDps * bufferSeconds[i] * scaled[i] / containerCount);
             }
         }
     }
@@ -194,16 +189,13 @@ namespace skysepehru.Core.PropertyRegistry.Tests.Editor
     // calculator is registered.
     internal sealed class XFromYCalculator : IPropertyCalculator
     {
-        public int GetInputProperties(Span<PropertyFilter> buffer)
+        public void Declare(CalculatorBuilder builder)
         {
-            buffer[0] = PropertyFilter.New(IntegrationTestProperties.YDerivedFromX, IntegrationTestEntities.Turret);
-            return 1;
+            builder.AddInput(IntegrationTestProperties.YDerivedFromX, IntegrationTestEntities.Turret);
+            builder.SetOutput(IntegrationTestProperties.XDerivedFromY, IntegrationTestEntities.Turret);
         }
 
-        public PropertyFilter GetOutputProperty()
-            => PropertyFilter.New(IntegrationTestProperties.XDerivedFromY, IntegrationTestEntities.Turret);
-
-        public void Calculate(IReadOnlyList<IReadOnlyList<IReadOnlyProperty>> inputs, List<Property> outputs)
+        public void Calculate(in CalculationContext context)
         {
             // Never reached: registering the loop-closing calculator throws before any tick runs.
         }
@@ -211,16 +203,13 @@ namespace skysepehru.Core.PropertyRegistry.Tests.Editor
 
     internal sealed class YFromXCalculator : IPropertyCalculator
     {
-        public int GetInputProperties(Span<PropertyFilter> buffer)
+        public void Declare(CalculatorBuilder builder)
         {
-            buffer[0] = PropertyFilter.New(IntegrationTestProperties.XDerivedFromY, IntegrationTestEntities.Turret);
-            return 1;
+            builder.AddInput(IntegrationTestProperties.XDerivedFromY, IntegrationTestEntities.Turret);
+            builder.SetOutput(IntegrationTestProperties.YDerivedFromX, IntegrationTestEntities.Turret);
         }
 
-        public PropertyFilter GetOutputProperty()
-            => PropertyFilter.New(IntegrationTestProperties.YDerivedFromX, IntegrationTestEntities.Turret);
-
-        public void Calculate(IReadOnlyList<IReadOnlyList<IReadOnlyProperty>> inputs, List<Property> outputs)
+        public void Calculate(in CalculationContext context)
         {
         }
     }

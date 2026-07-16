@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 
@@ -11,32 +10,29 @@ namespace skysepehru.Core.PropertyRegistry.Tests.Editor.BasePropertyCalculatorTe
         private const double InitialValue = 42;
 
         [Test]
-        public void GetOutputProperty_ReturnsTheBaseFilter()
+        public void Declare_SetsTheBaseFilterAsOutput_WithNoInputs()
         {
             var filter = PropertyFilter.New(Health, Turret);
             var calculator = new BasePropertyCalculator(filter);
+            var builder = new CalculatorBuilder();
 
-            Assert.That(calculator.GetOutputProperty().Equals(filter), Is.True);
-        }
+            calculator.Declare(builder);
 
-        [Test]
-        public void GetInputProperties_ReturnsZero()
-        {
-            var calculator = new BasePropertyCalculator(PropertyFilter.New(Health, Turret));
-            Span<PropertyFilter> buffer = stackalloc PropertyFilter[4];
-
-            Assert.That(calculator.GetInputProperties(buffer), Is.EqualTo(0));
+            Assert.That(builder.OutputFilter.Equals(filter), Is.True);
+            Assert.That(builder.BuildInputFilters(), Is.Empty);
         }
 
         [Test]
         public void BasePropertyCalculator_Calculate_IsANoOp()
         {
             var calculator = new BasePropertyCalculator(PropertyFilter.New(Health, Turret));
-            var output = new Property(PropertyId.New(Health, Turret, 0), InitialValue);
+            var store = new PropertyStore(Turret);
+            var output = store.Register(PropertyId.New(Health, Turret, 0), InitialValue);
             var outputs = new List<Property> { output };
-            var inputs = new List<IReadOnlyList<IReadOnlyProperty>>();
+            var context = new CalculationContext(new PropertyFilter[0], outputs, store);
 
-            Assert.DoesNotThrow(() => calculator.Calculate(inputs, outputs));
+            calculator.Calculate(in context);
+
             Assert.That(output.ReadOnlyValueReactive.CurrentValue, Is.EqualTo(InitialValue));
         }
     }

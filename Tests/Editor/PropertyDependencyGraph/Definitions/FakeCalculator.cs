@@ -1,11 +1,8 @@
-using System;
-using System.Collections.Generic;
-
 namespace skysepehru.Core.PropertyRegistry.Tests.Editor.PropertyDependencyGraphTests
 {
-    // Hand-written double for IPropertyCalculator. NSubstitute can't proxy this interface because
-    // GetInputProperties takes a Span<PropertyFilter> (a ByRef-like type Castle DynamicProxy rejects),
-    // so a fake carrying a fixed output/input set is the correct tool for wiring the graph under test.
+    // Hand-written double for IPropertyCalculator carrying a fixed output/input filter set. Declares them
+    // through the builder's internal raw-filter overloads so the graph-wiring tests can drive Connect
+    // directly with int-keyed filters; Calculate is unused here.
     internal sealed class FakeCalculator : IPropertyCalculator
     {
         private readonly PropertyFilter _output;
@@ -17,19 +14,38 @@ namespace skysepehru.Core.PropertyRegistry.Tests.Editor.PropertyDependencyGraphT
             _inputs = inputs;
         }
 
-        public int GetInputProperties(Span<PropertyFilter> buffer)
+        public void Declare(CalculatorBuilder builder)
         {
             for (int i = 0; i < _inputs.Length; i++)
             {
-                buffer[i] = _inputs[i];
+                builder.AddInput(_inputs[i]);
             }
 
-            return _inputs.Length;
+            builder.SetOutput(_output);
         }
 
-        public PropertyFilter GetOutputProperty() => _output;
+        public void Calculate(in CalculationContext context)
+        {
+        }
+    }
 
-        public void Calculate(IReadOnlyList<IReadOnlyList<IReadOnlyProperty>> inputs, List<Property> outputs)
+    // A calculator that declares an input but never calls SetOutput, to exercise the graph rejecting a
+    // calculator with no declared output at registration time.
+    internal sealed class NoOutputCalculator : IPropertyCalculator
+    {
+        private readonly PropertyFilter _input;
+
+        public NoOutputCalculator(PropertyFilter input)
+        {
+            _input = input;
+        }
+
+        public void Declare(CalculatorBuilder builder)
+        {
+            builder.AddInput(_input);
+        }
+
+        public void Calculate(in CalculationContext context)
         {
         }
     }
