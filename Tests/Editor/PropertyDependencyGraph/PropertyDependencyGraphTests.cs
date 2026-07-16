@@ -30,6 +30,7 @@ namespace skysepehru.Core.PropertyRegistry.Tests.Editor.PropertyDependencyGraphT
             var node = _graph.GetOrAddNode(Filter(Turret, BaseInput), isBaseProperty: true, out var wasAlreadyConnected);
 
             Assert.That(node.Calculator, Is.InstanceOf<BasePropertyCalculator>());
+            Assert.That(node.IsBaseProperty, Is.True);
             Assert.That(node.IsConnected, Is.True);
             Assert.That(wasAlreadyConnected, Is.False);
         }
@@ -40,6 +41,7 @@ namespace skysepehru.Core.PropertyRegistry.Tests.Editor.PropertyDependencyGraphT
             var node = _graph.GetOrAddNode(Filter(Turret, DerivedOutput), isBaseProperty: false, out var wasAlreadyConnected);
 
             Assert.That(node.Calculator, Is.Null);
+            Assert.That(node.IsBaseProperty, Is.False);
             Assert.That(node.IsConnected, Is.False);
             Assert.That(wasAlreadyConnected, Is.False);
         }

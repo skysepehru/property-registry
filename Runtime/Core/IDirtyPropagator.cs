@@ -8,7 +8,7 @@ namespace skysepehru.Core.PropertyRegistry
     /// </summary>
     internal interface IDirtyPropagator
     {
-        IReadOnlyCollection<PropertyGraphNode> DirtyNodes { get; }
+        HashSet<PropertyGraphNode> DirtyNodes { get; }
         void ClearDirtyNodes();
         void MarkTreeNodeDirty(PropertyGraphNode node);
         void MarkPropertyDirty(PropertyId propertyId, PropertyGraphNode startNode, IPropertyStore store);

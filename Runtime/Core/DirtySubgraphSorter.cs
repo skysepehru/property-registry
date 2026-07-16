@@ -17,9 +17,10 @@ namespace skysepehru.Core.PropertyRegistry
         /// <summary>
         /// Returns the dirty nodes in evaluation order (dependencies first). The result is a
         /// read-only view of a buffer owned and reused by the sorter; the caller must consume it
-        /// before the next <see cref="Sort"/>.
+        /// before the next <see cref="Sort"/>. Takes the concrete <see cref="HashSet{T}"/> (not an
+        /// interface) so foreach binds to the struct enumerator instead of boxing one per call.
         /// </summary>
-        public IReadOnlyList<PropertyGraphNode> Sort(IReadOnlyCollection<PropertyGraphNode> dirtyNodes)
+        public IReadOnlyList<PropertyGraphNode> Sort(HashSet<PropertyGraphNode> dirtyNodes)
         {
             _sorted.Clear();
             _inDegreeCache.Clear();
@@ -82,7 +83,7 @@ namespace skysepehru.Core.PropertyRegistry
 
             if (_sorted.Count != dirtyNodes.Count)
             {
-                throw new Exception("Cycle detected in property dependency graph.");
+                throw new InvalidOperationException("Cycle detected in property dependency graph.");
             }
 
             return _sorted;

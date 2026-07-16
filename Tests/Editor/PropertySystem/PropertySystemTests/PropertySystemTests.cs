@@ -167,6 +167,7 @@ namespace skysepehru.Core.PropertyRegistry.Tests.Editor.PropertySystemTests
             _graph.GetNode(baseFilter).Returns(new PropertyGraphNode
             {
                 PropertyFilter = baseFilter,
+                IsBaseProperty = true,
                 Calculator = new BasePropertyCalculator(baseFilter),
             });
             var stored = new Property(PropertyId.New(TestProperties.Base, TestEntities.Primary, 0), 0);
@@ -184,6 +185,7 @@ namespace skysepehru.Core.PropertyRegistry.Tests.Editor.PropertySystemTests
             var baseNode = new PropertyGraphNode
             {
                 PropertyFilter = baseFilter,
+                IsBaseProperty = true,
                 Calculator = new BasePropertyCalculator(baseFilter),
             };
             _graph.GetNode(baseFilter).Returns(baseNode);
@@ -199,7 +201,7 @@ namespace skysepehru.Core.PropertyRegistry.Tests.Editor.PropertySystemTests
         public void SetBasePropertyValue_OnADerivedProperty_Throws()
         {
             var derivedFilter = PropertyFilter.New(TestProperties.Derived, TestEntities.Primary);
-            // A node driven by a non-base calculator is a derived property and must reject direct writes.
+            // A node not flagged as base is a derived property and must reject direct writes.
             _graph.GetNode(derivedFilter).Returns(new PropertyGraphNode
             {
                 PropertyFilter = derivedFilter,

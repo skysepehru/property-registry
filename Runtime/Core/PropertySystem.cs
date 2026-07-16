@@ -119,9 +119,9 @@ namespace skysepehru.Core.PropertyRegistry
             var propertyId = PropertyId.New(name, entity, instanceIndex);
             var node = _graph.GetNode(GetFilterFromId(propertyId));
 
-            if (node.Calculator is not BasePropertyCalculator)
+            if (!node.IsBaseProperty)
             {
-                throw new Exception("Directly modifying derived properties is not possible.");
+                throw new InvalidOperationException("Directly modifying derived properties is not possible.");
             }
 
             _store.GetProperty(propertyId).ValueReactive.Value = value;

@@ -25,7 +25,7 @@ namespace skysepehru.Core.PropertyRegistry
             _globalEntity = globalEntity;
         }
 
-        public IReadOnlyCollection<PropertyGraphNode> DirtyNodes => _dirtyNodes;
+        public HashSet<PropertyGraphNode> DirtyNodes => _dirtyNodes;
 
         public void ClearDirtyNodes() => _dirtyNodes.Clear();
 

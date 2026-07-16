@@ -27,7 +27,7 @@ namespace skysepehru.Core.PropertyRegistry
         {
             if (_properties.ContainsKey(id))
             {
-                throw new Exception("Property is already registered.");
+                throw new InvalidOperationException("Property is already registered.");
             }
 
             var existingInstanceCount = 0;
@@ -38,13 +38,13 @@ namespace skysepehru.Core.PropertyRegistry
 
                 if (id.Entity == _globalEntity && existingInstanceCount > 0)
                 {
-                    throw new Exception("Global entity can not have more than 1 instance.");
+                    throw new InvalidOperationException("Global entity can not have more than 1 instance.");
                 }
             }
             
             if (id.Entity != _globalEntity && existingInstanceCount != id.InstanceIndex)
             {
-                throw new Exception("Entity instance properties must be registered in the correct incremental index order!");
+                throw new InvalidOperationException("Entity instance properties must be registered in the correct incremental index order!");
             }
 
             entityPropertiesDic ??= new Dictionary<int, List<Property>>();

@@ -8,6 +8,6 @@ namespace skysepehru.Core.PropertyRegistry
     /// </summary>
     internal interface IDirtySubgraphSorter
     {
-        IReadOnlyList<PropertyGraphNode> Sort(IReadOnlyCollection<PropertyGraphNode> dirtyNodes);
+        IReadOnlyList<PropertyGraphNode> Sort(HashSet<PropertyGraphNode> dirtyNodes);
     }
 }

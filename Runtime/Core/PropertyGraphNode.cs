@@ -6,6 +6,7 @@ namespace skysepehru.Core.PropertyRegistry
     {
         public PropertyFilter PropertyFilter;
         public PropertyFilter[] InputFilters;
+        public bool IsBaseProperty;
         public List<PropertyGraphNode> Inputs;
         public List<PropertyGraphNode> Outputs;
         public IPropertyCalculator Calculator;

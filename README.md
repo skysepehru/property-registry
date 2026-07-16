@@ -161,6 +161,21 @@ stats.SetBasePropertyValue(Stat.Strength, Entity.Character, value: 25, instanceI
 stats.Tick(); // Char0 AP subscriber fires again: 37.5
 ```
 
+## Performance & GC
+
+- **Zero steady-state GC on the hot path.** `Tick()` and `SetBasePropertyValue(...)`
+  perform no heap allocations once internal buffers have warmed up: no boxing (enum and
+  dictionary keys use non-boxing struct comparisons), no copies (calculators read the
+  store's data through stack-only ref-struct views), and no per-tick enumerator or
+  closure allocations.
+- **All allocation happens at registration time.** Properties, graph nodes and
+  calculator wiring allocate once, up front. Internal scratch buffers grow to a
+  high-water mark and are then reused, so the first few ticks after startup (or after
+  registering many new instances) may allocate for capacity growth before going quiet.
+- **Reactive reads:** value propagation through R3 is allocation-free; `Subscribe(...)`
+  allocates once per subscription, as usual.
+- Exceptions and `GetReport()` allocate, but only on misuse or explicit diagnostics.
+
 ## Key points
 
 - **Register properties before calculators.**

@@ -30,7 +30,9 @@ namespace skysepehru.Core.PropertyRegistry
             node = new PropertyGraphNode { PropertyFilter = filter };
             if (isBaseProperty)
             {
+                node.IsBaseProperty = true;
                 node.Calculator = new BasePropertyCalculator(filter);
+                node.InputFilters = Array.Empty<PropertyFilter>();
             }
 
             _nodes[filter] = node;
@@ -54,25 +56,25 @@ namespace skysepehru.Core.PropertyRegistry
 
             if (!_nodes.TryGetValue(outputFilter, out var node))
             {
-                throw new Exception($"Calculator defines non-registered output property: {outputFilter.ToString()}.");
+                throw new InvalidOperationException($"Calculator defines non-registered output property: {outputFilter.ToString()}.");
             }
 
             if (node.IsConnected)
             {
-                throw new Exception("A calculator is already registered for this property.");
+                throw new InvalidOperationException("A calculator is already registered for this property.");
             }
 
             for (int i = 0; i < inputFilters.Length; i++)
             {
                 if (!_nodes.ContainsKey(inputFilters[i]))
                 {
-                    throw new Exception("Calculator defines non-registered input properties.");
+                    throw new InvalidOperationException("Calculator defines non-registered input properties.");
                 }
             }
 
             if (WouldCreateCycle(node, inputFilters))
             {
-                throw new Exception("Connecting this calculator would create a cyclic dependency.");
+                throw new InvalidOperationException("Connecting this calculator would create a cyclic dependency.");
             }
 
             node.Calculator = calculator;
