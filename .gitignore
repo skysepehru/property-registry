@@ -1,10 +1,12 @@
-# .NET build output (CI projects under ci~/)
+# .NET build output (CI projects under .ci/)
 [Bb]in/
 [Oo]bj/
 
 # Rider / VS
 .idea/
 .vs/
+*.user
+*.DotSettings.user
 
 # OS
 .DS_Store

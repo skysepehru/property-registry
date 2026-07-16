@@ -16,7 +16,7 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore "ci~/PropertyRegistry.Tests/PropertyRegistry.Tests.csproj"
+        run: dotnet restore ".ci/PropertyRegistry.Tests/PropertyRegistry.Tests.csproj"
 
       - name: Test
-        run: dotnet test "ci~/PropertyRegistry.Tests/PropertyRegistry.Tests.csproj" --configuration Release --logger "console;verbosity=normal"
+        run: dotnet test ".ci/PropertyRegistry.Tests/PropertyRegistry.Tests.csproj" --configuration Release --logger "console;verbosity=normal"
