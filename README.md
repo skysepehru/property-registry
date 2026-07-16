@@ -6,6 +6,70 @@ You declare properties and the calculators that relate them; the registry builds
 dependency graph, recomputes only the parts affected by a change, and exposes every
 value as an [R3](https://github.com/Cysharp/R3) reactive property you can subscribe to.
 
+Here is a sample graph — a game economy where the per-instance levels you set (each
+turret, each building) roll up into average levels and a `PlayerPowerLevel` that ripples
+across turret stats, enemy stats, and the upgrade economy. Every arrow is a calculator;
+change a base input, call `Tick()`, and only the downstream nodes recompute.
+
+```mermaid
+graph LR
+    subgraph Turrets
+        T1L["Turret 1 Level"]:::base
+        T2L["Turret 2 Level"]:::base
+        T1D["Turret 1 DPS"]:::derived
+        T2D["Turret 2 DPS"]:::derived
+        TDPS["TotalTurretDPS"]:::derived
+        ATL["AvgTurretLevel"]:::derived
+        T1L --> T1D
+        T2L --> T2D
+        T1D --> TDPS
+        T2D --> TDPS
+        T1L --> ATL
+        T2L --> ATL
+    end
+
+    subgraph Buildings
+        B1L["Building 1 Level"]:::base
+        B2L["Building 2 Level"]:::base
+        ABL["AvgBuildingLevel"]:::derived
+        B1L --> ABL
+        B2L --> ABL
+    end
+
+    PPL["PlayerPowerLevel"]:::derived
+    ATL --> PPL
+    ABL --> PPL
+
+    subgraph Enemy
+        SR["SpawnRate"]:::derived
+        RDPS["ReferenceDPS"]:::derived
+        GPK["GoldPerKill"]:::derived
+        HP["EnemyHP"]:::derived
+        RDPS --> HP
+        SR --> HP
+    end
+
+    subgraph Economy
+        INC["GoldIncome/s"]:::derived
+        COST["UpgradeCost"]:::derived
+        INC --> COST
+    end
+
+    TDPS --> RDPS
+    PPL --> SR
+    PPL --> RDPS
+    PPL --> GPK
+    GPK --> INC
+    SR  --> INC
+
+    classDef base    fill:#e3f2fd,stroke:#1565c0,color:#0d1b2a;
+    classDef derived fill:#e8f5e9,stroke:#2e7d32,color:#0d1b2a;
+```
+
+> Blue nodes are **base** properties you set directly; green are **derived** and produced
+> by calculators. This is illustrative — the real system distinguishes global from
+> per-instance properties (see [Concepts](#concepts)).
+
 ## Requirements
 
 - Unity **2022.3** or newer
